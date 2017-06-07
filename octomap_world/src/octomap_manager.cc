@@ -188,7 +188,7 @@ void OctomapManager::subscribe() {
   disparity_sub_ = nh_.subscribe(
       "disparity", 40, &OctomapManager::insertDisparityImageWithTf, this);
   pointcloud_sub_ = nh_.subscribe(
-      "pointcloud", 40, &OctomapManager::insertPointcloudWithTf, this);
+      "pointcloud", 40, &OctomapManager::pointCloudCallback, this);
   octomap_sub_ =
       nh_.subscribe("input_octomap", 1, &OctomapManager::octomapCallback, this);
 }
