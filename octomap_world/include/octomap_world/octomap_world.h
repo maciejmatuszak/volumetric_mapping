@@ -49,6 +49,8 @@ struct OctomapParameters {
         threshold_max(0.97),
         threshold_occupancy(0.7),
         filter_speckles(true),
+        max_free_space(0.0),
+        min_height_free_space(0.0),
         sensor_max_range(5.0),
         visualize_min_z(-std::numeric_limits<double>::max()),
         visualize_max_z(std::numeric_limits<double>::max()),
@@ -72,6 +74,12 @@ struct OctomapParameters {
 
   // Filter neighbor-less nodes as 'speckles'.
   bool filter_speckles;
+
+  // Maximum range to allow a free space update.
+  double max_free_space;
+  
+  // Minimum height below sensor to allow a free space update.
+  double min_height_free_space;
 
   // Maximum range to allow a sensor measurement. Negative values to not
   // filter.
@@ -133,9 +141,18 @@ class OctomapWorld : public WorldBase {
   virtual CellStatus getLineStatusBoundingBox(
       const Eigen::Vector3d& start, const Eigen::Vector3d& end,
       const Eigen::Vector3d& bounding_box_size) const;
+  virtual void getOccupiedPointCloud(
+      pcl::PointCloud<pcl::PointXYZ>* output_cloud) const;
   virtual void getOccupiedPointcloudInBoundingBox(
       const Eigen::Vector3d& center, const Eigen::Vector3d& bounding_box_size,
       pcl::PointCloud<pcl::PointXYZ>* output_cloud) const;
+
+  // Structure: vector of pairs, key is the cube center and double is the
+  // dimension of each side.
+  void getAllFreeBoxes(
+      std::vector<std::pair<Eigen::Vector3d, double> >* free_box_vector) const;
+  void getAllOccupiedBoxes(std::vector<std::pair<Eigen::Vector3d, double> >*
+                               occupied_box_vector) const;
 
   virtual double getResolution() const;
   virtual Eigen::Vector3d getMapCenter() const;
@@ -196,6 +213,10 @@ class OctomapWorld : public WorldBase {
   void setLogOddsBoundingBox(const Eigen::Vector3d& position,
                              const Eigen::Vector3d& bounding_box_size,
                              double log_odds_value);
+
+  void getAllBoxes(
+      bool occupied_boxes,
+      std::vector<std::pair<Eigen::Vector3d, double> >* box_vector) const;
 
   // Helper functions for building up a map from sensor data.
   void castRay(const octomap::point3d& sensor_origin,
