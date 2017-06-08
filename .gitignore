@@ -30,3 +30,5 @@
 octomap_world/CMakeLists\.txt\.user
 
 build-octomap_world-*/
+
+CMakeLists\.txt\.user
