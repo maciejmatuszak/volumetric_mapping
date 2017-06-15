@@ -219,6 +219,7 @@ void OctomapManager::advertiseServices() {
 }
 
 void OctomapManager::advertisePublishers() {
+    ROS_INFO_STREAM("Advertising publishers");
   occupied_nodes_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
       "octomap_occupied", 1, latch_topics_);
   free_nodes_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
@@ -234,10 +235,12 @@ void OctomapManager::advertisePublishers() {
   nearest_obstacle_pub_ = nh_private_.advertise<sensor_msgs::PointCloud2>(
       "nearest_obstacle", 1, false);
 
-  if (map_publish_frequency_ > 0.0) {
+  if (map_publish_frequency_ > 0.0)
+  {
+    ros::Duration d(1.0 / map_publish_frequency_);
+    ROS_INFO_STREAM("setting publish timer with interval: " << d.toSec());
     map_publish_timer_ =
-        nh_private_.createTimer(ros::Duration(1.0 / map_publish_frequency_),
-                                &OctomapManager::publishAllEvent, this);
+    nh_private_.createTimer( d, &OctomapManager::publishAllEvent, this, false, true);
   }
 }
 
@@ -289,7 +292,10 @@ void OctomapManager::publishAll() {
   }
 }
 
-void OctomapManager::publishAllEvent(const ros::TimerEvent& e) { publishAll(); }
+void OctomapManager::publishAllEvent(const ros::TimerEvent& e)
+{
+    publishAll();
+}
 
 bool OctomapManager::resetMapCallback(std_srvs::Empty::Request& request,
                                       std_srvs::Empty::Response& response) {
@@ -448,10 +454,15 @@ void OctomapManager::insertPointCloudThread() {
       Transformation sensor_to_world = current_transform_;
       new_point_cloud_ready_ = false;
       point_cloud_insertion_mutex_.unlock();
-
+      ROS_INFO_STREAM("inserting PC..");
       insertPointcloud(sensor_to_world, pcl_pointcloud);
+      ROS_INFO_STREAM("inserting PC..DONE");
     }
-    else rate.sleep();
+    else
+    {
+        ROS_INFO_STREAM("sleeping ");
+        rate.sleep();
+    }
   }
 }
 
@@ -473,24 +484,35 @@ bool OctomapManager::lookupTransformTf(const std::string& from_frame,
   tf::StampedTransform tf_transform;
 
   ros::Time time_to_lookup = timestamp;
+  std::string error_msg;
 
   // If this transform isn't possible at the time, then try to just look up
   // the latest (this is to work with bag files and static transform publisher,
   // etc).
-  if (!tf_listener_.canTransform(to_frame, from_frame, time_to_lookup)) {
-    ros::Duration timestamp_age = ros::Time::now() - time_to_lookup;
-    if (timestamp_age < tf_listener_.getCacheLength()) {
-      time_to_lookup = ros::Time(0);
-      ROS_WARN("Using latest TF transform instead of timestamp match.");
-    } else {
-      ROS_ERROR("Requested transform time older than cache limit.");
+  ROS_DEBUG_STREAM("Getting Transform: " << from_frame << " > > " << to_frame << "; TIME:" << time_to_lookup);
+  if (!tf_listener_.waitForTransform(
+              to_frame,
+              from_frame,
+              time_to_lookup,
+              ros::Duration(0.3),
+              ros::Duration(0.01),
+              &error_msg))
+  {
+      ros::Duration timestamp_age = ros::Time::now() - time_to_lookup;
+
+      ROS_ERROR_STREAM("Can NOT transform; AGE:" << timestamp_age << "; ERROR:" << error_msg);
       return false;
-    }
+  }
+  else
+  {
+      ROS_DEBUG("Can Transform OK;");
   }
 
   try {
+    ROS_DEBUG_STREAM("Calling lookupTransform");
     tf_listener_.lookupTransform(to_frame, from_frame, time_to_lookup,
                                  tf_transform);
+    ROS_DEBUG_STREAM("GOT Transform X:" << tf_transform.getOrigin().x() << "; Y:" << tf_transform.getOrigin().y() << "; Z:"  << tf_transform.getOrigin().z() );
   } catch (tf::TransformException& ex) {
     ROS_ERROR_STREAM(
         "Error getting TF transform from sensor data: " << ex.what());

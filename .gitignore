@@ -32,3 +32,5 @@ octomap_world/CMakeLists\.txt\.user
 build-octomap_world-*/
 
 CMakeLists\.txt\.user
+
+build-volumetric_map_base-*/
