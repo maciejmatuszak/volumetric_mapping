@@ -41,13 +41,8 @@ int main(int argc, char** argv) {
 
   volumetric_mapping::OctomapManager manager(nh, nh_private);
 
-  std::thread insert_pointcloud_thread(
-      &volumetric_mapping::OctomapManager::insertPointCloudThread, &manager);
 
   ros::MultiThreadedSpinner spinner;
   spinner.spin();
-
-  insert_pointcloud_thread.join();
-
   return 0;
 }

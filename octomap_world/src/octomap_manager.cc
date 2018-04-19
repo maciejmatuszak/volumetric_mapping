@@ -71,6 +71,17 @@ OctomapManager::OctomapManager(const ros::NodeHandle& nh,
       ROS_ERROR_STREAM("Could not load octomap from path: " << octomap_file);
     }
   }
+
+  insertion_thread_is_running_ = true;
+  ROS_INFO_STREAM("octomap_manager_node starting insertPointCloudThread");
+  insert_pointcloud_thread = boost::make_shared<boost::thread>(&volumetric_mapping::OctomapManager::insertPointCloudThread, this);
+}
+
+OctomapManager::~OctomapManager()
+{
+    insertion_thread_is_running_ = false;
+    ROS_INFO_STREAM("octomap_manager_node waiting for insertPointCloudThread to finish");
+    insert_pointcloud_thread.get()->join();
 }
 
 void OctomapManager::setParametersFromROS() {
@@ -461,33 +472,33 @@ void OctomapManager::insertPointcloudWithTf(
   // Look up transform from sensor frame to world frame.
   Transformation sensor_to_world;
   if (lookupTransform(point_cloud->header.frame_id, world_frame_,
-                      point_cloud->header.stamp, &sensor_to_world)) {
-    point_cloud_insertion_mutex_.lock();
+                      point_cloud->header.stamp, &sensor_to_world))
+  {
+    boost::mutex::scoped_lock(point_cloud_insertion_mutex_);
     current_point_cloud_ = point_cloud;
     current_transform_ = sensor_to_world;
     new_point_cloud_ready_ = true;
-    point_cloud_insertion_mutex_.unlock();
   }
 }
 
 void OctomapManager::insertPointCloudThread() {
   ros::Rate rate(kInsertionThreadRate);
-  while (ros::ok()) {
-    if (new_point_cloud_ready_) {
-      pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_pointcloud(
-          new pcl::PointCloud<pcl::PointXYZ>);
-      point_cloud_insertion_mutex_.lock();
-      pcl::fromROSMsg(*current_point_cloud_, *pcl_pointcloud);
-      Transformation sensor_to_world = current_transform_;
-      new_point_cloud_ready_ = false;
-      point_cloud_insertion_mutex_.unlock();
-      ROS_INFO_STREAM("inserting PC..");
+  while (ros::ok() && insertion_thread_is_running_)
+  {
+    if (new_point_cloud_ready_)
+    {
+      pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
+      Transformation sensor_to_world;
+      {
+          boost::mutex::scoped_lock(point_cloud_insertion_mutex_);
+          pcl::fromROSMsg(*current_point_cloud_, *pcl_pointcloud);
+          sensor_to_world = current_transform_;
+          new_point_cloud_ready_ = false;
+      }
       insertPointcloud(sensor_to_world, pcl_pointcloud);
-      ROS_INFO_STREAM("inserting PC..DONE");
     }
     else
     {
-        ROS_INFO_STREAM("sleeping ");
         rate.sleep();
     }
   }

@@ -35,8 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "octomap_world/octomap_world.h"
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include <atomic>
-#include <mutex>
 
 #include <octomap_msgs/GetOctomap.h>
 #include <std_srvs/Empty.h>
@@ -58,7 +59,8 @@ class OctomapManager : public OctomapWorld {
   typedef std::shared_ptr<OctomapManager> Ptr;
 
   // By default, loads octomap parameters from the ROS parameter server.
-  OctomapManager(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
+    OctomapManager(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
+    ~OctomapManager();
 
   void publishAll();
   void publishAllEvent(const ros::TimerEvent& e);
@@ -191,7 +193,9 @@ class OctomapManager : public OctomapWorld {
   sensor_msgs::PointCloud2::ConstPtr current_point_cloud_;
   Transformation current_transform_;
   std::atomic<bool> new_point_cloud_ready_;
-  std::mutex point_cloud_insertion_mutex_;
+  std::atomic<bool> insertion_thread_is_running_;
+  boost::mutex  point_cloud_insertion_mutex_;
+  boost::shared_ptr<boost::thread> insert_pointcloud_thread;
 
   static constexpr double kInsertionThreadRate = 10;
 
