@@ -66,7 +66,7 @@ class OctomapManager : public OctomapWorld {
   // Data insertion callbacks with TF frame resolution through the listener.
   void insertDisparityImageWithTf(
       const stereo_msgs::DisparityImageConstPtr& disparity);
-  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& point_cloud);
+  void insertPointcloudWithTf(const sensor_msgs::PointCloud2::ConstPtr& point_cloud);
 
   // Data insertion thread.
   void insertPointCloudThread();

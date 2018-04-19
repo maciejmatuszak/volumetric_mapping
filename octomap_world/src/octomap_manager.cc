@@ -190,7 +190,7 @@ void OctomapManager::subscribe() {
   disparity_sub_ = nh_.subscribe(
       "disparity", queue_size_, &OctomapManager::insertDisparityImageWithTf, this);
   pointcloud_sub_ = nh_.subscribe(
-      "pointcloud", queue_size_, &OctomapManager::pointCloudCallback, this);
+      "pointcloud", queue_size_, &OctomapManager::insertPointcloudWithTf, this);
   octomap_sub_ =
       nh_.subscribe("input_octomap", 1, &OctomapManager::octomapCallback, this);
 }
@@ -456,7 +456,7 @@ void OctomapManager::insertDisparityImageWithTf(
   }
 }
 
-void OctomapManager::pointCloudCallback(
+void OctomapManager::insertPointcloudWithTf(
     const sensor_msgs::PointCloud2::ConstPtr& point_cloud) {
   // Look up transform from sensor frame to world frame.
   Transformation sensor_to_world;
