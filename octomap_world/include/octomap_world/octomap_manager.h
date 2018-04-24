@@ -157,6 +157,7 @@ class OctomapManager : public OctomapWorld {
   // Publish markers for visualization.
   ros::Publisher occupied_nodes_pub_;
   ros::Publisher free_nodes_pub_;
+  ros::Publisher evaluation_nodes_pub_;
 
   // Services!
   ros::ServiceServer reset_map_service_;

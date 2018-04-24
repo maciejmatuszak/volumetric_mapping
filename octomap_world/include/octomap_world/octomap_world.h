@@ -245,6 +245,10 @@ class OctomapWorld : public WorldBase {
   void setOctomapFromBinaryMsg(const octomap_msgs::Octomap& msg);
   void setOctomapFromFullMsg(const octomap_msgs::Octomap& msg);
 
+  std::vector<std::tuple<Eigen::Vector3d,Eigen::Vector3d, CellStatus>> getLines();
+  void clearLines();
+  void addLine(const Eigen::Vector3d& start, const Eigen::Vector3d& end, CellStatus status) const;
+
   double colorizeMapByHeight(double z, double min_z, double max_z) const;
 
   // Collision checking methods.
@@ -253,6 +257,8 @@ class OctomapWorld : public WorldBase {
   std_msgs::ColorRGBA percentToColor(double h) const;
 
   std::shared_ptr<octomap::OcTree> octree_;
+
+  std::vector<std::tuple<Eigen::Vector3d,Eigen::Vector3d, CellStatus>> lines_;
 
   OctomapParameters params_;
 

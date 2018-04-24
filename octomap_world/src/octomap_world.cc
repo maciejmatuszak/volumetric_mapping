@@ -336,11 +336,14 @@ OctomapWorld::CellStatus OctomapWorld::getLineStatus(
   for (octomap::OcTreeKey key : key_ray) {
     octomap::OcTreeNode* node = octree_->search(key);
     if (node == NULL) {
+        addLine(start,end, CellStatus::kUnknown);
       return CellStatus::kUnknown;
     } else if (octree_->isNodeOccupied(node)) {
+        addLine(start,end, CellStatus::kOccupied);
       return CellStatus::kOccupied;
     }
   }
+  addLine(start,end, CellStatus::kFree);
   return CellStatus::kFree;
 }
 
@@ -401,7 +404,6 @@ OctomapWorld::CellStatus OctomapWorld::getLineStatusBoundingBox(
   if (z_disc <= 0.0) z_disc = 1.0;
 
   const Eigen::Vector3d bounding_box_half_size = bounding_box_size * 0.5;
-
   for (double x = -bounding_box_half_size.x(); x <= bounding_box_half_size.x();
        x += x_disc) {
     for (double y = -bounding_box_half_size.y();
@@ -681,7 +683,25 @@ void OctomapWorld::setOctomapFromBinaryMsg(const octomap_msgs::Octomap& msg) {
 
 void OctomapWorld::setOctomapFromFullMsg(const octomap_msgs::Octomap& msg) {
   octree_.reset(
-      dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(msg)));
+              dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(msg)));
+}
+
+std::vector<std::tuple<Eigen::Vector3d,Eigen::Vector3d, WorldBase::CellStatus>> OctomapWorld::getLines()
+{
+    return lines_;
+}
+
+void OctomapWorld::clearLines()
+{
+    lines_.clear();
+}
+
+void OctomapWorld::addLine(const Eigen::Vector3d &start, const Eigen::Vector3d &end, WorldBase::CellStatus status) const
+{
+    Eigen::Vector3d b,e;
+    b = start;
+    e = end;
+    (const_cast<OctomapWorld*>(this))->lines_.emplace_back(b, e, status);
 }
 
 bool OctomapWorld::loadOctomapFromFile(const std::string& filename) {

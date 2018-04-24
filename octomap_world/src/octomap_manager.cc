@@ -217,8 +217,11 @@ void OctomapManager::advertiseServices() {
 }
 
 void OctomapManager::advertisePublishers() {
-  occupied_nodes_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
-      "octomap_occupied", 1, latch_topics_);
+
+    evaluation_nodes_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
+        "octomap_evaluation", 1, latch_topics_);
+    occupied_nodes_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
+        "octomap_occupied", 1, latch_topics_);
   free_nodes_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
       "octomap_free", 1, latch_topics_);
 
