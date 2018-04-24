@@ -242,6 +242,69 @@ void OctomapManager::advertisePublishers() {
   }
 }
 
+void OctomapManager::publishLines()
+{
+    visualization_msgs::MarkerArrayPtr ap = boost::make_shared<visualization_msgs::MarkerArray>();
+    auto lines = getLines();
+    ap->markers.resize(lines.size());
+
+    for(int i =0; i < lines.size(); ++i)
+    {
+        Eigen::Vector3d begin = std::get<0>(lines[i]);
+        Eigen::Vector3d end = std::get<1>(lines[i]);
+        volumetric_mapping::WorldBase::CellStatus status = std::get<2>(lines[i]);
+
+
+        auto marker = &(ap->markers[i]);
+        marker->header.stamp = ros::Time::now();
+        marker->header.frame_id = world_frame_;
+        marker->id = i;
+        marker->ns = "check_lines";
+        marker->type = visualization_msgs::Marker::ARROW;
+        marker->action = visualization_msgs::Marker::ADD;
+        marker->pose.position.x = begin[0];
+        marker->pose.position.y = begin[1];
+        marker->pose.position.z = begin[2];
+        Eigen::Quaternion<double> q;
+        Eigen::Vector3d init(1.0, 0.0, 0.0);
+
+
+        Eigen::Vector3d dir = end - begin;
+        q.setFromTwoVectors(init, dir);
+        q.normalize();
+        marker->pose.orientation.x = q.x();
+        marker->pose.orientation.y = q.y();
+        marker->pose.orientation.z = q.z();
+        marker->pose.orientation.w = q.w();
+        marker->scale.x = dir.norm();
+        marker->scale.y = 0.03;
+        marker->scale.z = 0.03;
+        if(status == volumetric_mapping::WorldBase::kFree)
+        {
+            marker->color.r = 0.0;
+            marker->color.g = 1.0;
+            marker->color.b = 0.0;
+        }
+        else if(status == volumetric_mapping::WorldBase::kUnknown)
+        {
+            marker->color.r = 0.0;
+            marker->color.g = 0.0;
+            marker->color.b = 1.0;
+
+        }
+        else //volumetric_mapping::WorldBase::kOccupied
+        {
+            marker->color.r = 1.0;
+            marker->color.g = 0.0;
+            marker->color.b = 0.0;
+        }
+        marker->color.a = 1.0;
+        marker->lifetime = ros::Duration(100.0);
+        marker->frame_locked = false;
+    }
+    evaluation_nodes_pub_.publish(ap);
+}
+
 void OctomapManager::publishAll() {
   if (latch_topics_ || occupied_nodes_pub_.getNumSubscribers() > 0 ||
       free_nodes_pub_.getNumSubscribers() > 0) {
