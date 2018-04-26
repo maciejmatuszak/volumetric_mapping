@@ -95,6 +95,7 @@ class OctomapManager : public OctomapWorld {
       volumetric_msgs::SetDisplayBounds::Response& response);
 
   void transformCallback(const geometry_msgs::TransformStamped& transform_msg);
+  void publishLines();
 
  private:
   // Sets up subscriptions based on ROS node parameters.
@@ -115,7 +116,6 @@ class OctomapManager : public OctomapWorld {
                             const std::string& to_frame,
                             const ros::Time& timestamp,
                             Transformation* transform);
-  void publishLines();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;

@@ -207,6 +207,8 @@ class OctomapWorld : public WorldBase {
 
   void coordToKey(const Eigen::Vector3d& coord, octomap::OcTreeKey* key) const;
   void keyToCoord(const octomap::OcTreeKey& key, Eigen::Vector3d* coord) const;
+  void clearLines();
+
 
  protected:
   // Actual implementation for inserting disparity data.
@@ -246,7 +248,6 @@ class OctomapWorld : public WorldBase {
   void setOctomapFromFullMsg(const octomap_msgs::Octomap& msg);
 
   std::vector<std::tuple<Eigen::Vector3d,Eigen::Vector3d, CellStatus>> getLines();
-  void clearLines();
   void addLine(const Eigen::Vector3d& start, const Eigen::Vector3d& end, CellStatus status) const;
 
   double colorizeMapByHeight(double z, double min_z, double max_z) const;

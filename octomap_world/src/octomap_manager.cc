@@ -257,7 +257,7 @@ void OctomapManager::publishLines()
 
         auto marker = &(ap->markers[i]);
         marker->header.stamp = ros::Time::now();
-        marker->header.frame_id = world_frame_;
+        marker->header.frame_id = robot_frame_;
         marker->id = i;
         marker->ns = "check_lines";
         marker->type = visualization_msgs::Marker::ARROW;
