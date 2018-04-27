@@ -277,6 +277,7 @@ void OctomapManager::advertisePublishers() {
 }
 
 void OctomapManager::publishAll() {
+    ROS_DEBUG("publishAll...");
   if (latch_topics_ || occupied_nodes_pub_.getNumSubscribers() > 0 ||
       free_nodes_pub_.getNumSubscribers() > 0) {
     visualization_msgs::MarkerArray occupied_nodes, free_nodes;
@@ -323,6 +324,7 @@ void OctomapManager::publishAll() {
       nearest_obstacle_pub_.publish(cloud);
     }
   }
+  ROS_DEBUG("publishAll...done");
 }
 
 void OctomapManager::publishAllEvent(const ros::TimerEvent& e)
@@ -486,6 +488,7 @@ void OctomapManager::insertDisparityImageWithTf(
 
 void OctomapManager::insertPointcloudWithTf(
     const sensor_msgs::PointCloud2::ConstPtr& point_cloud) {
+  ROS_DEBUG("insertPointcloudWithTf...");
   // Look up transform from sensor frame to world frame.
   Transformation sensor_to_world;
   if (lookupTransform(point_cloud->header.frame_id, world_frame_,
@@ -505,6 +508,7 @@ void OctomapManager::insertPointcloudWithTf(
         insertPointcloud(sensor_to_world, pcl_pointcloud);
     }
   }
+  ROS_DEBUG("insertPointcloudWithTf...done");
 }
 
 void OctomapManager::insertPointCloudThread() {
@@ -513,6 +517,7 @@ void OctomapManager::insertPointCloudThread() {
   {
     if (new_point_cloud_ready_)
     {
+      ROS_DEBUG("insertPointCloudThread...");
       pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
       Transformation sensor_to_world;
       {
@@ -522,6 +527,7 @@ void OctomapManager::insertPointCloudThread() {
           new_point_cloud_ready_ = false;
       }
       insertPointcloud(sensor_to_world, pcl_pointcloud);
+      ROS_DEBUG("insertPointCloudThread...DONE");
     }
     else
     {

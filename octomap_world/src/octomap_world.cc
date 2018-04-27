@@ -451,6 +451,7 @@ OctomapWorld::CellStatus OctomapWorld::getVisibility(
 OctomapWorld::CellStatus OctomapWorld::getLineStatusBoundingBox(
     const Eigen::Vector3d& start, const Eigen::Vector3d& end,
     const Eigen::Vector3d& bounding_box_size) const {
+  ROS_DEBUG("getLineStatusBoundingBox...");
   // TODO(helenol): Probably best way would be to get all the coordinates along
   // the line, then make a set of all the OcTreeKeys in all the bounding boxes
   // around the nodes... and then just go through and query once.
@@ -489,6 +490,7 @@ OctomapWorld::CellStatus OctomapWorld::getLineStatusBoundingBox(
       }
     }
   }
+  ROS_DEBUG("getLineStatusBoundingBox...DONE");
   return CellStatus::kFree;
 }
 
