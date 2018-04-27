@@ -53,11 +53,11 @@ OctomapManager::OctomapManager(const ros::NodeHandle& nh,
       full_image_size_(752, 480),
       map_publish_frequency_(0.0),
       new_point_cloud_ready_(false),
-      queue_size_(1) {
+      queue_size_(1) ,
+      use_separate_thread_for_insert_(false),
+      insertion_thread_is_running_(false)
+{
   setParametersFromROS();
-  subscribe();
-  advertiseServices();
-  advertisePublishers();
 
   // After creating the manager, if the octomap_file parameter is set,
   // load the octomap at that path and publish it.
@@ -72,16 +72,31 @@ OctomapManager::OctomapManager(const ros::NodeHandle& nh,
     }
   }
 
-  insertion_thread_is_running_ = true;
-  ROS_INFO_STREAM("octomap_manager_node starting insertPointCloudThread");
-  insert_pointcloud_thread = boost::make_shared<boost::thread>(&volumetric_mapping::OctomapManager::insertPointCloudThread, this);
+  if(use_separate_thread_for_insert_)
+  {
+    ROS_INFO_STREAM("octomap_manager_node starting insertPointCloudThread");
+    insert_pointcloud_thread = boost::make_shared<boost::thread>(&volumetric_mapping::OctomapManager::insertPointCloudThread, this);
+    insertion_thread_is_running_ = true;
+  }
+  else
+  {
+      ROS_INFO_STREAM("octomap_manager_node PointCloud Insertion will be done in main thread");
+  }
+
+  //internals ready - openup to external communication
+  subscribe();
+  advertiseServices();
+  advertisePublishers();
 }
 
 OctomapManager::~OctomapManager()
 {
-    insertion_thread_is_running_ = false;
-    ROS_INFO_STREAM("octomap_manager_node waiting for insertPointCloudThread to finish");
-    insert_pointcloud_thread.get()->join();
+    if(insert_pointcloud_thread)
+    {
+      insertion_thread_is_running_ = false;
+      ROS_INFO_STREAM("octomap_manager_node waiting for insertPointCloudThread to finish");
+      insert_pointcloud_thread.get()->join();
+    }
 }
 
 void OctomapManager::setParametersFromROS() {
@@ -123,6 +138,8 @@ void OctomapManager::setParametersFromROS() {
   nh_private_.param("change_detection_enabled", params.change_detection_enabled,
                     params.change_detection_enabled);
   nh_private_.param("queue_size", queue_size_, queue_size_);
+
+  nh_private_.param("use_separate_thread_for_insert", use_separate_thread_for_insert_, use_separate_thread_for_insert_);
 
   // Try to initialize Q matrix from parameters, if available.
   std::vector<double> Q_vec;
@@ -474,10 +491,19 @@ void OctomapManager::insertPointcloudWithTf(
   if (lookupTransform(point_cloud->header.frame_id, world_frame_,
                       point_cloud->header.stamp, &sensor_to_world))
   {
-    boost::mutex::scoped_lock(point_cloud_insertion_mutex_);
-    current_point_cloud_ = point_cloud;
-    current_transform_ = sensor_to_world;
-    new_point_cloud_ready_ = true;
+    if(use_separate_thread_for_insert_)
+    {
+      boost::mutex::scoped_lock(point_cloud_insertion_mutex_);
+      current_point_cloud_ = point_cloud;
+      current_transform_ = sensor_to_world;
+      new_point_cloud_ready_ = true;
+    }
+    else
+    {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::fromROSMsg(*point_cloud, *pcl_pointcloud);
+        insertPointcloud(sensor_to_world, pcl_pointcloud);
+    }
   }
 }
 

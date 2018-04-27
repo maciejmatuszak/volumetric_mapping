@@ -147,6 +147,7 @@ class OctomapManager : public OctomapWorld {
   Transformation T_B_C_;
   Transformation T_B_D_;
 
+  bool use_separate_thread_for_insert_;
   bool latch_topics_;
   int queue_size_;
 
