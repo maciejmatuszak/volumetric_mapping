@@ -485,12 +485,13 @@ OctomapWorld::CellStatus OctomapWorld::getLineStatusBoundingBox(
         Eigen::Vector3d offset(x, y, z);
         ret = getLineStatus(start + offset, end + offset);
         if (ret != CellStatus::kFree) {
+          ROS_DEBUG("getLineStatusBoundingBox...DONE - conflict");
           return ret;
         }
       }
     }
   }
-  ROS_DEBUG("getLineStatusBoundingBox...DONE");
+  ROS_DEBUG("getLineStatusBoundingBox...DONE - free");
   return CellStatus::kFree;
 }
 
